@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context="com.ezmcom.smudgal.identitysecurity.MainActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+    </android.support.design.widget.AppBarLayout>
+
+    <!--<android.widget.TextView
+        android:layout_width="match_parent"
+        android:layout_height="300px"
+        android:layout_marginTop="200px"
+        android:id="@+id/sensor_list"
+        android:scrollbars="vertical"
+        android:maxLines="5"
+        ></android.widget.TextView>
+
+    <android.widget.TextView
+        android:layout_width="match_parent"
+        android:layout_height="300px"
+        android:layout_marginTop="600px"
+        android:id="@+id/sensor_list2"
+        android:scrollbars="vertical"
+        android:maxLines="5"
+        ></android.widget.TextView>-->
+    <EditText
+        android:layout_marginTop="150px"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/windowSecond"
+        android:hint="seconds to record"
+        android:inputType="number"
+        />
+    <EditText
+        android:layout_marginTop="250px"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/host"
+        android:hint="host name"
+        android:inputType="text"/>
+
+    <EditText
+        android:layout_marginTop="350px"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/userName"
+        android:hint="UserName"
+        android:inputType="text"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="500px"
+        android:text="Turns Left"
+        android:textSize="50px"
+        android:gravity="center"/>
+    <TextView
+        android:layout_marginTop="650px"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:id="@+id/turns"
+        android:textSize="100px"
+        android:text="3"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/recording"
+        android:layout_marginTop="800px"
+        android:textSize="50px"
+        android:visibility="invisible"
+        android:textColor="@color/colorAccent"
+        android:id="@+id/recording"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/not_recording"
+        android:layout_marginTop="800px"
+        android:textSize="50px"
+        android:id="@+id/not_recording"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="900px"
+        android:id="@+id/accel"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="950px"
+        android:id="@+id/mag"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        android:src="@android:drawable/button_onoff_indicator_off"
+        />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="@dimen/fab_margin"
+        android:src="@android:drawable/button_onoff_indicator_on" />
+
+</android.support.design.widget.CoordinatorLayout>
