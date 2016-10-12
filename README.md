@@ -1,5 +1,7 @@
 # behavioralDetection android application
-This android application records a user's movements through accelerometer and magnetometer. This data recorded is used as identification for a user.
+
+##What the application aims to acheive :
+It tries to use a form of indentity verification to record and compare different users. It uses accelerometer and magnetometer to define the way a user walks/moves. This data is then used to mark a user.
 
 [Link to server for this android app](https://github.com/siddharthmudgal/behavioralDetectionServer.git)
 
@@ -8,7 +10,21 @@ Technologies and frameworks used :
 2. MEAN stack
   *. MongoDB
   *. Express
-  *. Angular
   *. Node
 3. Handelbars
 4. fusion charts
+
+
+To run this application use an Android IDE to import this project. Play this project via AVD or export a apk file to your android device and run it.
+
+Settings on UI : 
+
+1. Seconds to record the data for (this is the duration of the latest x seconds of the data for the sensor)
+2. Host Name : give the IP of the server 
+3. username
+
+How the application works : 
+
+1. It records the last x seconds of the data stored under a username. 
+2. User needs to record the sensor data three times
+3. once the user records the data three times it is sent over to the server to be processed.
