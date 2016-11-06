@@ -1,14 +1,24 @@
 package com.ezmcom.smudgal.walkpattern;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
@@ -18,13 +28,24 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
+
+import static com.ezmcom.smudgal.walkpattern.Constants.walking;
 
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
     public int count_accel;
     public int count_magneto;
-    public float[][] acc_x,acc_y,acc_z;
-    public float[][] mag_x,mag_y,mag_z;
+    public float[] acc_x,acc_y,acc_z;
+    public float[] mag_x,mag_y,mag_z;
     public int size;
     EditText seconds ;
     EditText host ;
@@ -40,7 +61,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     TextView not_recording ;
     EditText username ;
     Util util;
-
+    protected  ActivityDetectionBroadcastReceiver activityDetectionBroadcastReceiver;
+    protected  GoogleApiClient googleApiClient;
     private void init(){
         count_accel = 0;
         count_magneto = 0;
@@ -65,9 +87,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         host.setEnabled(true);
         seconds.setEnabled(true);
         host.setText("192.168.0.101");
+        buildGoogleApiClient();
     }
 
     private void startInit(){
+        acc_x = new float[size+1]; acc_y = new float[size+1]; acc_z = new float[size+1];
+        mag_x = new float[size+1]; mag_y = new float[size+1]; mag_z = new float[size+1];
         recording.setVisibility(View.VISIBLE);
         not_recording.setVisibility(View.INVISIBLE);
         start.setEnabled(false);
@@ -75,6 +100,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         seconds.setEnabled(false);
         host.setEnabled(false);
         username.setEnabled(false);
+        username.setEnabled(false);
+        if (!googleApiClient.isConnected()) {
+            Toast.makeText(this, getString(R.string.not_connected),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                googleApiClient,
+                Constants.detection_time,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
+
+    protected synchronized void buildGoogleApiClient() {
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(ActivityRecognition.API)
+                .build();
     }
 
     private void stopInit(){
@@ -85,6 +129,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         seconds.setEnabled(true);
         host.setEnabled(true);
         username.setEnabled(true);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(activityDetectionBroadcastReceiver, new IntentFilter(Constants.movement));
+        if (!googleApiClient.isConnected()) {
+            Toast.makeText(this, getString(R.string.not_connected), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
+                googleApiClient,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        googleApiClient.disconnect();
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Register the broadcast receiver that informs this activity of the DetectedActivity
+        // object broadcast sent by the intent service.
+        LocalBroadcastManager.getInstance(this).registerReceiver(activityDetectionBroadcastReceiver,
+                new IntentFilter(Constants.movement));
+    }
+    @Override
+    protected void onPause() {
+        // Unregister the broadcast receiver that was registered during onResume().
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(activityDetectionBroadcastReceiver);
+        super.onPause();
     }
 
     @Override
@@ -94,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         init();
-
+        activityDetectionBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
         seconds.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -109,8 +189,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void afterTextChanged(Editable s) {
                 size = Integer.parseInt(String.valueOf(s)) * 48;
-                acc_x = acc_y = acc_z = new float[3][size];
-                mag_x = mag_y = mag_z = new float[3][size];
+                acc_x = acc_y = acc_z = new float[size];
+                mag_x = mag_y = mag_z = new float[size];
             }
         });
         username.addTextChangedListener(new TextWatcher() {
@@ -163,7 +243,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sensorManager.unregisterListener(MainActivity.this, magneto);
                 if (Integer.valueOf((String) turns.getText()) == 0) {
                     turns.setText("User taken");
-                    util.convertToJson(String.valueOf(username.getText()), acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, size, String.valueOf(host.getText()),getApplicationContext());
                     init();
                 }
             }
@@ -196,26 +275,69 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        int turn = Integer.valueOf(turns.getText().toString());
+        if (count_accel >= (size - 1))
+            count_accel = count_accel % size;
+        if (count_magneto >= (size - 1))
+            count_magneto = count_magneto % size;
+
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             float val[] = event.values;
-            acc_x[turn][(++count_accel)%size] = val[0];
-            acc_y[turn][(count_accel)%size] = val[1];
-            acc_z[turn][(count_accel)%size] = val[2];
-            acc.setText(String.valueOf(acc_x[turn][count_accel%size])+"\t"+String.valueOf(acc_y[turn][count_accel%size])+"\t"+String.valueOf(acc_z[turn][count_accel%size])+"\t");
+            acc_x[(++count_accel)] = val[0];
+            acc_y[(count_accel)] = val[1];
+            acc_z[(count_accel)] = val[2];
+            acc.setText(String.valueOf(acc_x[count_accel])+"\t"+String.valueOf(acc_y[count_accel])+"\t"+String.valueOf(acc_z[count_accel])+"\t");
         }
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
             float val[] = event.values;
-            mag_x[turn][(++count_magneto)%size] = val[0];
-            mag_y[turn][(count_magneto)%size] = val[1];
-            mag_z[turn][(count_magneto) % size] = val[2];
-            mag.setText(String.valueOf(mag_x[turn][count_magneto%size]) + "\t"+String.valueOf(mag_y[turn][count_magneto%size]) + "\t"+String.valueOf(mag_z[turn][count_magneto%size]) + "\t");
+            mag_x[(++count_magneto)] = val[0];
+            mag_y[(count_magneto)] = val[1];
+            mag_z[(count_magneto)] = val[2];
+            mag.setText(String.valueOf(mag_x[count_magneto]) + "\t"+String.valueOf(mag_y[count_magneto]) + "\t"+String.valueOf(mag_z[count_magneto]) + "\t");
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        Toast.makeText(this,"connected",Toast.LENGTH_SHORT);
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Toast.makeText(this,"onConnectionSuspended",Toast.LENGTH_SHORT);
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Toast.makeText(this,"onConnectionFailed",Toast.LENGTH_SHORT);
+    }
+
+    @Override
+    public void onResult(@NonNull Status status) {
+
+    }
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivityService.class);
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    class ActivityDetectionBroadcastReceiver extends BroadcastReceiver{
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getStringExtra("style");
+            if (Constants.walking.equals(action)){
+                util.convertToJson(action,String.valueOf(username.getText()), acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, size, String.valueOf(host.getText()),getApplicationContext());
+            }
+            else if (Constants.running.equals(action)){
+                util.convertToJson(action,String.valueOf(username.getText()), acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, size, String.valueOf(host.getText()),getApplicationContext());
+            }
+        }
     }
 
 }

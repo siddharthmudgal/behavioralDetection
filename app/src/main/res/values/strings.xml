@@ -4,4 +4,7 @@
     <string name="recording">recording now!</string>
     <string name="not_recording">not recording</string>
     <string name="behavUsernames">behavUsernames</string>
+    <string name="not_connected">not_connected</string>
+    <string name="walking">walking</string>
+    <string name="running">running</string>
 </resources>
