@@ -28,3 +28,7 @@ How the application works :
 1. It records the last x seconds of the data stored under a username. 
 2. User needs to record the sensor data three times
 3. once the user records the data three times it is sent over to the server to be processed.
+
+Sample Screen
+
+![alt text](https://github.com/siddharthmudgal/behavioralDetection/blob/master/screen/screen.png "Sample screen")
