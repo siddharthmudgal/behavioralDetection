@@ -1,5 +1,14 @@
 # behavioralDetection android application
 
+##Installing and running the client application :
+1. Import the source code in Android Studio
+2. Click Path -> 
+   *. Build
+   *. Build APK
+3. APK will be generated under the system path (if default paths are used)
+C:\Users\{User}\AndroidStudioProjects\WalkPattern\app\build\outputs\apk
+4. Copy this apk file to an android device and install it
+
 ##What the application aims to acheive :
 It tries to use a form of indentity verification to record and compare different users. It uses accelerometer and magnetometer to define the way a user walks/moves. This data is then used to mark a user.
 
